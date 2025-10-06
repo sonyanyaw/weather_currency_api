@@ -13,6 +13,12 @@ def weather_success_handler(request: httpx.Request) -> httpx.Response:
             "current": {
                 "temperature": 18,
                 "summary": "Rainy"
+            },
+            "daily": {
+                "data": [
+                    {"summary": "Partly sunny. Temperature 25/34 °C. Wind from E in the afternoon."},
+                    {"summary": "Sunny. Temperature 9/26 °C."}
+                ]
             }
         })
     return httpx.Response(404, json={"error": "Not found"})
@@ -45,8 +51,10 @@ async def test_get_weather_success():
         result = await get_weather("berlin", client=test_client)
     
     assert result["city"] == "berlin"
-    assert result["temperature_c"] == 18
+    assert result["temperature_c_now"] == 18
     assert result["description"] == "Rainy"
+    assert result["temperature_c_today"] == "Partly sunny. Temperature 25/34 °C. Wind from E in the afternoon."
+    assert result["temperature_c_tomorrow"] == "Sunny. Temperature 9/26 °C."
 
 @pytest.mark.asyncio
 async def test_get_weather_different_city():
@@ -56,7 +64,7 @@ async def test_get_weather_different_city():
         result = await get_weather("paris", client=test_client)
     
     assert result["city"] == "paris"
-    assert result["temperature_c"] == 18
+    assert result["temperature_c_now"] == 18
 
 @pytest.mark.asyncio
 async def test_get_weather_api_error():
@@ -71,16 +79,18 @@ async def test_get_weather_invalid_data():
     """Тест обработки некорректных данных от API"""
     transport = httpx.MockTransport(weather_invalid_data_handler)
     async with httpx.AsyncClient(transport=transport) as test_client:
-        with pytest.raises(KeyError):  # Ожидаем KeyError при отсутствии нужных полей
-            await get_weather("berlin", client=test_client)
+       with patch('src.services.services.get_cache', return_value=None):
+            with pytest.raises(KeyError):  # Ожидаем KeyError при отсутствии нужных полей
+                await get_weather("berlin", client=test_client)
 
 @pytest.mark.asyncio
 async def test_get_weather_timeout():
     """Тест обработки таймаута"""
     transport = httpx.MockTransport(weather_timeout_handler)
     async with httpx.AsyncClient(transport=transport) as test_client:
-        with pytest.raises(httpx.TimeoutException):
-            await get_weather("berlin", client=test_client)
+        with patch('src.services.services.get_cache', return_value=None):
+            with pytest.raises(httpx.TimeoutException):
+                await get_weather("berlin", client=test_client)
 
 @pytest.mark.asyncio
 async def test_get_weather_without_client():
@@ -91,7 +101,13 @@ async def test_get_weather_without_client():
             mock_response = httpx.Response(200, json={
                 "current": {
                     "temperature": 20,
-                    "summary": "Sunny"
+                    "summary": "Sunny",
+                },
+                "daily": {
+                    "data": [
+                        {"summary": "Cloudy. Temperature 15/26 °C. Wind from W in the afternoon."},
+                        {"summary": "Partly sunny. Temperature 9/30 °C."}
+                    ]
                 }
             })
             mock_client.return_value.__aenter__.return_value.get.return_value = mock_response
@@ -99,7 +115,9 @@ async def test_get_weather_without_client():
             result = await get_weather("london")
             
             assert result["city"] == "london"
-            assert result["temperature_c"] == 20
+            assert result["temperature_c_now"] == 20
+            assert result["temperature_c_today"] == "Cloudy. Temperature 15/26 °C. Wind from W in the afternoon."
+            assert result["temperature_c_tomorrow"] == "Partly sunny. Temperature 9/30 °C."
 
 # Тесты для функции convert_currency
 
@@ -183,8 +201,9 @@ async def test_convert_currency_missing_currency():
     """Тест когда запрашиваемая валюта отсутствует в ответе"""
     transport = httpx.MockTransport(currency_missing_currency_handler)
     async with httpx.AsyncClient(transport=transport) as test_client:
-        with pytest.raises(KeyError):  # Ожидаем KeyError при отсутствии валюты
-            await convert_currency("USD", "GBP", 100.0, client=test_client)
+        with patch('src.services.services.get_cache', return_value=None) as mock_get_cache:
+            with pytest.raises(KeyError):  # Ожидаем KeyError при отсутствии валюты
+                await convert_currency("USD", "GBP", 100.0, client=test_client)
 
 @pytest.mark.asyncio
 async def test_convert_currency_same_currency():
@@ -205,6 +224,12 @@ async def test_multiple_requests_same_client():
                 "current": {
                     "temperature": 22,
                     "summary": "Sunny"
+                },
+                "daily": {
+                    "data": [
+                        {"summary": "Partly sunny. Temperature 25/34 °C. Wind from E in the afternoon."},
+                        {"summary": "Sunny. Temperature 9/26 °C."}
+                    ]
                 }
             })
         elif "exchangerate-api.com" in request.url.host:
@@ -218,10 +243,13 @@ async def test_multiple_requests_same_client():
     
     transport = httpx.MockTransport(combined_handler)
     async with httpx.AsyncClient(transport=transport) as test_client:
-        # Тестируем обе функции с одним клиентом
-        weather_result = await get_weather("madrid", client=test_client)
-        currency_result = await convert_currency("USD", "EUR", 50.0, client=test_client)
+        # Мокаем кеш для погоды и валюты
+        with patch('src.services.services.get_cache', return_value=None) as mock_get_cache:
+            weather_result = await get_weather("madrid", client=test_client)
+            currency_result = await convert_currency("USD", "EUR", 50.0, client=test_client)
         
         assert weather_result["city"] == "madrid"
-        assert weather_result["temperature_c"] == 22
+        assert weather_result["temperature_c_now"] == 22
+        assert weather_result["temperature_c_today"] == "Partly sunny. Temperature 25/34 °C. Wind from E in the afternoon."
+        assert weather_result["temperature_c_tomorrow"] == "Sunny. Temperature 9/26 °C."
         assert currency_result == 45.0  # 50 * 0.9

@@ -4,5 +4,6 @@ httpx
 python-dotenv
 pydantic
 pytest
+pytest-asyncio
 redis
 aiogram
