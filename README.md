@@ -104,26 +104,27 @@ GET /weather?city=Taipei
 ---
 
 ## Структура проекта
-
-weather_currency_api/
-├─ src/
-│   ├─ main.py           # Точка входа FastAPI
-│   ├─ models/
-│   │   ├─ models.py         # Pydantic модели для валидации
-│   ├─ routes/
-│   │   ├─ routes.py         # Эндпоинты
-│   ├─ services/
-│   │   ├─ services.py       # Логика погоды и конвертации
-│   ├─ services/
-│   │   ├─ utils.py          # Кэширование, Redis helper
-│   └─ bot.py            # Telegram-бот
-├─ tests/                # Тесты
-│   └─ test_validation.py  
-├─ requirements.txt
-├─ Dockerfile
-├─ docker-compose.yml
-├─ .env.example
-└─ README.md
+1. Скопировать `.env.example` → `.env` и добавить свои ключи:
+   ```text
+   weather_currency_api/
+   ├─ src/
+   │   ├─ main.py           # Точка входа FastAPI
+   │   ├─ models/
+   │   │   ├─ models.py         # Pydantic модели для валидации
+   │   ├─ routes/
+   │   │   ├─ routes.py         # Эндпоинты
+   │   ├─ services/
+   │   │   ├─ services.py       # Логика погоды и конвертации
+   │   ├─ services/
+   │   │   ├─ utils.py          # Кэширование, Redis helper
+   │   └─ bot.py            # Telegram-бот
+   ├─ tests/                # Тесты
+   │   └─ test_validation.py  
+   ├─ requirements.txt
+   ├─ Dockerfile
+   ├─ docker-compose.yml
+   ├─ .env.example
+   └─ README.md
 
 ---
 
