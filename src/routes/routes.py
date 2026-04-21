@@ -4,7 +4,8 @@ import httpx
 from src.routes.deps import get_http_client
 from src.services.weather_service import get_weather
 from src.services.currency_service import convert_currency
-from src.models.models import WeatherResponse, CurrencyConvertResponse
+from src.schemas.weather import WeatherResponse
+from src.schemas.currency import CurrencyConvertResponse
 
 router = APIRouter()
 
@@ -37,11 +38,14 @@ async def convert(
     try:
         result = await convert_currency(from_cur.upper(), to.upper(), amount, client)
 
+        print(result)
+
         return CurrencyConvertResponse(
             from_currency=from_cur.upper(),
             to_currency=to.upper(),
             amount=amount,
-            converted_amount=result,
+            converted_amount=result["converted"],
+            rate=result["rate"],
         )
 
     except ValueError as e:
