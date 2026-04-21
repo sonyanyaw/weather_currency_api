@@ -25,7 +25,6 @@
 ### Локально
 
 1. Скопировать `.env.example` → `.env` и добавить свои ключи:
-   ```text
    WEATHER_API_KEY=ваш_ключ
    CURRENCYRATE_API_KEY=ваш_ключ
    REDIS_URL=redis://localhost:6379/0
