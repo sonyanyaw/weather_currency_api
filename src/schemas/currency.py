@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-import decimal
+from decimal import Decimal
+
 
 class CurrencyConvertRequest(BaseModel):
     from_currency: str = Field(pattern='^[A-Za-z]{3}$', example="USD", description="Currency code")
@@ -9,6 +10,6 @@ class CurrencyConvertRequest(BaseModel):
 class CurrencyConvertResponse(BaseModel):
     from_currency: str
     to_currency: str
-    amount: decimal.Decimal
-    converted_amount: float
-    rate: float
+    amount: Decimal
+    converted_amount: Decimal
+    rate: Decimal
