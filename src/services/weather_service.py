@@ -11,7 +11,13 @@ async def get_weather(city: str, client: httpx.AsyncClient):
     if cached:
         return cached
 
-    data = await fetch_weather(city, client)
+    try:
+        data = await fetch_weather(city, client)
+    except httpx.HTTPError as e:
+        raise ValueError("Weather API error") from e
+
+    if "current" not in data:
+        raise ValueError("Invalid weather response")
 
     result = {
         "city": city,
